@@ -6,7 +6,8 @@ output: html_notebook
 Enter the directory of the maca folder on your drive and the name of the tissue you want to analyze.
 
 ```{r}
-rootdir = "~/maca"
+#rootdir = "~/maca"
+rootdir = "~/Senior_Year/CS_229/Project/maca"
 tissue_of_interest = "Marrow"
 ```
 
@@ -16,6 +17,7 @@ Load the requisite packages and some additional helper functions.
 library(Seurat)
 library(dplyr)
 library(Matrix)
+library(pdfCluster)
 ```
 
 Load the plate metadata. Check which plates have been downloaded.
@@ -154,6 +156,15 @@ tiss <- RunTSNE(object = tiss, dims.use = 1:n.pcs, seed.use = 10, perplexity=30)
 ```{r}
 # note that you can set do.label=T to help label individual clusters
 TSNEPlot(object = tiss, do.label = T)
+```
+
+Perform external evaluation of the clustering (compare it to the gold-standard clustering, which is determined by each sample's actual cell type) with the adjusted Rand index.
+
+```{r}
+cluster <- unname(tiss@ident)
+
+#Need to read in data from file for the gold standard!
+#adj.rand.index(cluster, gold_standard)
 ```
 
 Check expression of genes of interset.
@@ -314,6 +325,14 @@ sub.res.used <- 1
 
 subtiss <- FindClusters(object = subtiss, reduction.type = "pca", dims.use = 1:sub.n.pcs, 
     resolution = sub.res.used, print.output = 0, save.SNN = TRUE)
+```
+
+Perform external evaluation of the clustering (compare it to the gold-standard clustering, which is determined by each sample's actual cell type) with the adjusted Rand index.
+
+```{r}
+cluster <- unname(subtiss.ident)
+#Need to read in data from file for the gold standard!
+#adj.rand.index(cluster, gold_standard)
 ```
 
 To visualize 
