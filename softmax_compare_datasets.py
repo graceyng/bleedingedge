@@ -28,6 +28,8 @@ print 'finished loading files'
 datasets = [{'data': 'raw_data', 'labels': 'raw_data_labels'}, {'data': 'scale_data', 'labels': 'final_labels'},
             {'data': 'pcas', 'labels': 'final_labels'}]
 
+
+
 train_accuracies = {'raw_data': [], 'scale_data': [], 'pcas': []}
 test_accuracies = {'raw_data': [], 'scale_data': [], 'pcas': []}
 avg_train_accuracies = {}
@@ -42,6 +44,9 @@ for dataset in datasets:
         X = X.T
     M = len(y)
 
+    print labels, y.shape
+
+    """
     #Try 6-fold cross validation instead of 10?
     kf = KFold(n_splits=6, shuffle=True)
     kf.get_n_splits(X)
@@ -60,26 +65,4 @@ for dataset in datasets:
         test_accuracies[data].append(test_accuracy)
     avg_train_accuracies = np.mean(train_accuracies[data])
     avg_test_accuracies = np.mean(test_accuracies[data])
-
-    """
-    p = np.random.permutation(M)
-    #num_train = int(np.floor(0.7 * M))
-    num_train = 4000
-    perm_X = X[p]
-    perm_y = y[p]
-    train_data = X[0:num_train]
-    train_labels = y[0:num_train]
-    test_data = X[num_train:]
-    test_labels = y[num_train:]
-    #should we do k-fold with k=10 instead?
-
-
-    clf = LogisticRegression(solver='sag', max_iter=100, random_state=42, multi_class='multinomial')
-    clf.fit(train_data, train_labels)
-    train_predict = clf.predict(train_data)
-    train_accuracy = accuracy_score(train_labels, train_predict)
-    test_predict = clf.predict(test_data)
-    test_accuracy = accuracy_score(test_labels, test_predict)
-    print 'train_accuracy for %s: %.4f' %(data, train_accuracy)
-    print 'test_accuracy for %s: %.4f' %(data, test_accuracy)
     """
