@@ -7,7 +7,7 @@ Enter the directory of the maca folder on your drive and the name of the tissue 
 
 ```{r}
 #rootdir = "~/maca"
-rootdir = "~/Senior_Year/CS_229/Project/maca"
+rootdir = "~/Documents/CS229/maca"
 tissue_of_interest = "Marrow"
 ```
 
@@ -118,14 +118,72 @@ tiss <- FilterCells(object = tiss, subset.names = c("nGene", "nReads"),
     low.thresholds = c(500, 50000), high.thresholds = c(25000, 2000000))
 ```
 
+TPM normalization
 
-Normalize (using TPM) the data, then regress out correlation with total reads
+```{r}
+counts_to_tpm <- function(counts, featureLength, meanFragmentLength) {
+  
+  # Ensure valid arguments.
+  stopifnot(length(featureLength) == nrow(counts))
+  stopifnot(length(meanFragmentLength) == ncol(counts))
+  
+  # Compute effective lengths of features in each library.
+  effLen <- do.call(cbind, lapply(1:ncol(counts), function(i) {
+    featureLength - meanFragmentLength[i] + 1
+  }))
+  
+  # Exclude genes with length less than the mean fragment length.
+  idx <- apply(effLen, 1, function(x) min(x) > 1)
+  counts <- counts[idx,]
+  effLen <- effLen[idx,]
+  featureLength <- featureLength[idx]
+  
+  # Process one column at a time.
+  tpm <- do.call(cbind, lapply(1:ncol(counts), function(i) {
+    rate = log(counts[,i]) - log(effLen[,i])
+    denom = log(sum(exp(rate)))
+    exp(rate - denom + log(1e6))
+  }))
+
+  # Copy the row and column names from the original matrix.
+  tpm <- data.frame(tpm)
+  colnames(tpm) <- colnames(counts)
+  rownames(tpm) <- rownames(counts)
+  return(tpm)
+}
+counts = counts_to_tpm(tiss@data, rowSums(tiss@data), rep(10, ncol(tiss@data)))
+tiss <- SetAssayData(object = tiss, assay.type = "RNA", 
+			slot = "data", new.data = counts)
+```
+
+Centered log 
+
+```{r}
+tiss <- NormalizeData(object = tiss, normalization.method = "CTLGene")
+```
+
+Log Normalize the data
+
 ```{r}
 tiss <- NormalizeData(object = tiss)
+```
+
+CPM
+
+```{r}
+m = tiss@data
+m = sweep(m,MARGIN=1,FUN="/",STATS=rowSums(m))
+m = m*1000000
+tiss <- SetAssayData(object = tiss, assay.type = "RNA", 
+			slot = "data", new.data = m)
+```
+
+
+Regress out correlations with ERCCs and Ribosomal RNA
+```{r}
 tiss <- ScaleData(object = tiss, vars.to.regress = c("nReads", "percent.ribo","Rn45s"))
 tiss <- FindVariableGenes(object = tiss, do.plot = TRUE, x.high.cutoff = Inf, y.cutoff = 0.5)
 ```
-
 
 Run Principal Component Analysis.
 ```{r}
